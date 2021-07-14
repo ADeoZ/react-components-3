@@ -7,12 +7,30 @@ function Calendar({ date }) {
     monthsShort : 'Января_Февраля_Марта_Апреля_Мая_Июня_Июля_Августа_Сентября_Октября_Ноября_Декабря'.split('_'),
   });
 
-  const datesArray = [];
-  // for (let i = moment(date).startOf('month').format(); i <= moment(date).endOf('month').format(); i += 86400) {
-  //   datesArray.push(i);
-  // }
-  // console.log(datesArray);
-  console.log(moment(date).startOf('month').format());
+  // начинаем всегда с понедельника
+  let startDate = moment(date).startOf('month');
+  if (startDate.day() !== 1) {
+    startDate = startDate.subtract((1 - startDate.day()) * -1, 'days');
+  }
+  // заканчиваем воскресеньем
+  let endDate = moment(date).endOf('month');
+  if (endDate.day() !== 0) {
+    endDate = endDate.add(7 - endDate.day(), 'days');
+  }
+  // считаем количество дней между датами
+  const daysCount = endDate.diff(startDate, 'days');
+
+  // заполняем массив датами в Unix-timestamp
+  const datesArray = [+startDate.format('x')];
+  for (let i = 0; i < daysCount; i += 1) {
+    datesArray.push(+startDate.add(1, 'days').format('x'));
+  }
+
+  // разбиваем массив дат на подмассивы по 7 дней
+  const weeksArray = [];
+  for (let i = 0; i < datesArray.length; i += 7) {
+    weeksArray.push(datesArray.slice(i, i + 7));
+  }
 
   return (
     <div className="ui-datepicker">
@@ -51,24 +69,19 @@ function Calendar({ date }) {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td className="ui-datepicker-other-month">27</td>
-            <td className="ui-datepicker-other-month">28</td>
-            <td>1</td>
-            <td>2</td>
-            <td>3</td>
-            <td>4</td>
-            <td>5</td>
-          </tr>
-          <tr>
-            <td>6</td>
-            <td>7</td>
-            <td className="ui-datepicker-today">8</td>
-            <td>9</td>
-            <td>10</td>
-            <td>11</td>
-            <td>12</td>
-          </tr>
+            {weeksArray.map((weeks) => {
+              return (
+                <tr key={moment(weeks[0]).week()}>
+                  {weeks.map((day) => {
+                    return (
+                      <td className={moment(date).month() !== moment(day).month() ? "ui-datepicker-other-month" : null} key={day}>
+                        {moment(day).format('D')}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
         </tbody>
       </table>
     </div>
